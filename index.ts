@@ -12,7 +12,6 @@ app.use(express.json());
 
 app.get("/optimize", async (req, res) => {
     try {
-        // console.log(req);
         const optimizedPicking = await Calculate.calculate(req.body);
         res.status(200).json(optimizedPicking);
     } catch (error) {

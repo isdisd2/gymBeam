@@ -25,7 +25,7 @@ class Calculate {
             let allPositions = [];
             for (let product of dataIn.productList) {
                 let productUrl = `${dataUrl}/${product}/positions`;
-                // Nacitaj pre kazdy produktk v liste jeho pozicie
+                // Nacitaj pre kazdy produkty v liste jeho pozicie
                 yield axios
                     .get(productUrl, {
                     method: "POST",
@@ -34,7 +34,7 @@ class Calculate {
                     },
                 })
                     .then((response) => {
-                    // kalkuluj len tie, ktore maju definovane pozicie
+                    // kalkuluj len tie produkty, ktore maju definovane pozicie
                     if (response.data.length > 0) {
                         allPositions = [...allPositions, ...response.data];
                     }
@@ -52,18 +52,19 @@ class Calculate {
         });
     }
     _findRoute(productListAll, allPositions, startPosition) {
-        // zisti poschodie
+        let floor = startPosition.z;
+        let itemsLeft = [...productListAll]; //este nenajdene tovary
+        // prejdi vsetky poschodia
+        const route = this._traceFloors(allPositions, floor, productListAll, itemsLeft, startPosition);
+        return route;
+    }
+    _traceFloors(allPositions, floor, productListAll, itemsLeft, startPosition) {
         let routeItems = [];
         let routeLengthItems = [];
-        let visitedFloors = [];
-        let floor = startPosition.z;
-        let itemsLeft = [...productListAll]; //este nenajdene tovary, najdotelne na danom poschodi
-        visitedFloors.push(floor);
         // vyber vsetky pozicie na danom poschodi
         const floorPositions = allPositions.filter((item) => item.z === floor && productListAll.includes(item.productId));
-        console.log("floorPositions.length: " + floorPositions.length);
         if (floorPositions.length === 0) {
-            // neexistuje na danom poschodi hladany tovar
+            // ak neexistuje na danom poschodi hladany tovar, koniec hladania
             return {
                 floor,
                 routeLength: 0,
@@ -72,11 +73,10 @@ class Calculate {
                 itemsLeft,
             };
         }
+        // vyber len tie produkty, ktore sa nachadzaju na poschodi
         let itemsOnFloor = floorPositions.map((pos) => pos.productId);
         itemsOnFloor = [...new Set(itemsOnFloor)];
-        console.log("itemsOnFloor: ");
-        console.log(itemsOnFloor);
-        //ponechaj na hladanie len tie ktore sa nenasli na danom poschodi
+        // ponechaj na hladanie len tie produkty, ktore sa nenasli na danom poschodi
         itemsLeft = itemsLeft.filter((x) => !itemsOnFloor.includes(x));
         // vyber vsetky pozicie hladanych tovarov na poschodi a ich vzdialenosti od vozika
         ({ routeLengthItems, routeItems } = this._traceOneFloor(itemsOnFloor, routeItems, routeLengthItems, startPosition, floorPositions));
@@ -85,10 +85,10 @@ class Calculate {
             return a + b;
         });
         return {
-            floor,
-            routeLength,
-            routeLengthItems,
             routeItems,
+            routeLength,
+            floor,
+            routeLengthItems,
             itemsLeft,
         };
     }
@@ -104,9 +104,6 @@ class Calculate {
                 distance: this._getDistance([startPosition.x, startPosition.y, startPosition.z], [position.x, position.y, position.z]),
             });
         }
-        // console.log("AllDistances ON: ");
-        // console.log(allDistances);
-        // console.log("AllDistances OFF: ");
         // najdi najblizsi tovar na poschodi od miesta kde som
         let nearest = allDistances.sort((a, b) => a.distance - b.distance)[0];
         // chod k najblisiemu, zapametaj si dlzku trasy a poziciu, kadial siel

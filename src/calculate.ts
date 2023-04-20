@@ -18,7 +18,8 @@ class Calculate {
         let allPositions: any = [];
         for (let product of dataIn.productList) {
             let productUrl = `${dataUrl}/${product}/positions`;
-            // Nacitaj pre kazdy produktk v liste jeho pozicie
+
+            // Nacitaj pre kazdy produkty v liste jeho pozicie
             await axios
                 .get(productUrl, {
                     method: "POST",
@@ -27,7 +28,7 @@ class Calculate {
                     },
                 })
                 .then((response: any) => {
-                    // kalkuluj len tie, ktore maju definovane pozicie
+                    // kalkuluj len tie produkty, ktore maju definovane pozicie
                     if (response.data.length > 0) {
                         allPositions = [...allPositions, ...response.data];
                     }
@@ -42,6 +43,7 @@ class Calculate {
 
         // usporiadaj podla podlazia
         allPositions.sort((a: { z: number }, b: { z: number }) => a.z - b.z);
+
         // return allPositions;
         const route = this._findRoute(
             dataIn.productList,
@@ -52,22 +54,38 @@ class Calculate {
     }
 
     _findRoute(productListAll: any, allPositions: any, startPosition: any) {
-        // zisti poschodie
-        let routeItems = [];
-        let routeLengthItems = [];
-        let visitedFloors = [];
         let floor = startPosition.z;
-        let itemsLeft = [...productListAll]; //este nenajdene tovary, najdotelne na danom poschodi
+        let itemsLeft = [...productListAll]; //este nenajdene tovary
+        
+        // prejdi vsetky poschodia
+        const route = this._traceFloors(
+            allPositions,
+            floor,
+            productListAll,
+            itemsLeft,
+            startPosition
+        );
+        return route;
+    }
 
-        visitedFloors.push(floor);
+    _traceFloors(
+        allPositions: any,
+        floor: number,
+        productListAll: any,
+        itemsLeft: any,
+        startPosition: any
+    ) {
+        let routeItems: any = [];
+        let routeLengthItems: any = [];
+
         // vyber vsetky pozicie na danom poschodi
         const floorPositions = allPositions.filter(
             (item: any) =>
                 item.z === floor && productListAll.includes(item.productId)
         );
-        console.log("floorPositions.length: " + floorPositions.length);
+
         if (floorPositions.length === 0) {
-            // neexistuje na danom poschodi hladany tovar
+            // ak neexistuje na danom poschodi hladany tovar, koniec hladania
             return {
                 floor,
                 routeLength: 0,
@@ -77,13 +95,12 @@ class Calculate {
             };
         }
 
-        let itemsOnFloor = floorPositions.map((pos) => pos.productId);
+        // vyber len tie produkty, ktore sa nachadzaju na poschodi
+        let itemsOnFloor = floorPositions.map((pos: any) => pos.productId);
         itemsOnFloor = [...new Set(itemsOnFloor)];
-        console.log("itemsOnFloor: ");
-        console.log(itemsOnFloor);
 
-        //ponechaj na hladanie len tie ktore sa nenasli na danom poschodi
-        itemsLeft = itemsLeft.filter((x) => !itemsOnFloor.includes(x));
+        // ponechaj na hladanie len tie produkty, ktore sa nenasli na danom poschodi
+        itemsLeft = itemsLeft.filter((x: string) => !itemsOnFloor.includes(x));
 
         // vyber vsetky pozicie hladanych tovarov na poschodi a ich vzdialenosti od vozika
         ({ routeLengthItems, routeItems } = this._traceOneFloor(
@@ -95,24 +112,27 @@ class Calculate {
         ));
 
         // oznac najblizsi tovar za najdeny
-        let routeLength = routeLengthItems.reduce(function (a, b) {
+        let routeLength = routeLengthItems.reduce(function (
+            a: number,
+            b: number
+        ) {
             return a + b;
         });
         return {
-            floor,
-            routeLength,
-            routeLengthItems,
             routeItems,
+            routeLength,
+            floor,
+            routeLengthItems,
             itemsLeft,
         };
     }
 
     _traceOneFloor(
-        itemsLeft,
-        routeItems,
-        routeLengthItems,
-        startPosition,
-        floorPositions
+        itemsLeft: any,
+        routeItems: any,
+        routeLengthItems: any,
+        startPosition: any,
+        floorPositions: any
     ) {
         let allDistances = [];
         for (const position of floorPositions) {
@@ -128,9 +148,7 @@ class Calculate {
                 ),
             });
         }
-        // console.log("AllDistances ON: ");
-        // console.log(allDistances);
-        // console.log("AllDistances OFF: ");
+
         // najdi najblizsi tovar na poschodi od miesta kde som
         let nearest = allDistances.sort((a, b) => a.distance - b.distance)[0];
 
@@ -143,9 +161,11 @@ class Calculate {
             y: nearest.y,
             z: nearest.z,
         });
+
         // zmaz najdenu z pola hladanych
         const index = itemsLeft.indexOf(nearest.productId);
         itemsLeft.splice(index, 1);
+
         // zmaz pozicie najdeneho produktu
         floorPositions = floorPositions.filter(
             (item: any) => item.productId !== nearest.productId

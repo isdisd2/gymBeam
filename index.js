@@ -23,7 +23,6 @@ const appUri = process.env.APP_URI;
 app.use(express_1.default.json());
 app.get("/optimize", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        // console.log(req);
         const optimizedPicking = yield Calculate.calculate(req.body);
         res.status(200).json(optimizedPicking);
     }
