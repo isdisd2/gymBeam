@@ -1,4 +1,3 @@
-// const fetch = require("node-fetch");
 const axios = require("axios");
 
 var dataUrl = "https://dev.aux.boxpi.com/case-study/products";
@@ -16,23 +15,17 @@ var dataUrl = "https://dev.aux.boxpi.com/case-study/products";
 
 class Calculate {
     async calculate(dataIn: any) {
-        let warehouseData;
         let allPositions: any = [];
         for (let product of dataIn.productList) {
             let productUrl = `${dataUrl}/${product}/positions`;
             // Nacitaj pre kazdy produktk v liste jeho pozicie
             await axios
-                .get(
-                    // "https://dev.aux.boxpi.com/case-study/products/product-4/positionsXXX",
-                    productUrl,
-                    {
-                        method: "POST",
-                        headers: {
-                            "X-API-KEY":
-                                "MVGBMS0VQI555bTery9qJ91BfUpi53N24SkKMf9Z",
-                        },
-                    }
-                )
+                .get(productUrl, {
+                    method: "POST",
+                    headers: {
+                        "X-API-KEY": "MVGBMS0VQI555bTery9qJ91BfUpi53N24SkKMf9Z",
+                    },
+                })
                 .then((response: any) => {
                     // kalkuluj len tie, ktore maju definovane pozicie
                     if (response.data.length > 0) {
@@ -93,7 +86,7 @@ class Calculate {
         itemsLeft = itemsLeft.filter((x) => !itemsOnFloor.includes(x));
 
         // vyber vsetky pozicie hladanych tovarov na poschodi a ich vzdialenosti od vozika
-        ({ routeLengthItems, routeItems } = this._traceFloor(
+        ({ routeLengthItems, routeItems } = this._traceOneFloor(
             itemsOnFloor,
             routeItems,
             routeLengthItems,
@@ -114,7 +107,7 @@ class Calculate {
         };
     }
 
-    _traceFloor(
+    _traceOneFloor(
         itemsLeft,
         routeItems,
         routeLengthItems,
@@ -160,7 +153,7 @@ class Calculate {
 
         // ak je co hladat chod hladat dalsi produkt
         if (itemsLeft.length > 0) {
-            this._traceFloor(
+            this._traceOneFloor(
                 itemsLeft,
                 routeItems,
                 routeLengthItems,

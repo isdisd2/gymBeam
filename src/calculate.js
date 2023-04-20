@@ -8,7 +8,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-// const fetch = require("node-fetch");
 const axios = require("axios");
 var dataUrl = "https://dev.aux.boxpi.com/case-study/products";
 // interface Point {
@@ -23,15 +22,12 @@ var dataUrl = "https://dev.aux.boxpi.com/case-study/products";
 class Calculate {
     calculate(dataIn) {
         return __awaiter(this, void 0, void 0, function* () {
-            let warehouseData;
             let allPositions = [];
             for (let product of dataIn.productList) {
                 let productUrl = `${dataUrl}/${product}/positions`;
                 // Nacitaj pre kazdy produktk v liste jeho pozicie
                 yield axios
-                    .get(
-                // "https://dev.aux.boxpi.com/case-study/products/product-4/positionsXXX",
-                productUrl, {
+                    .get(productUrl, {
                     method: "POST",
                     headers: {
                         "X-API-KEY": "MVGBMS0VQI555bTery9qJ91BfUpi53N24SkKMf9Z",
@@ -83,7 +79,7 @@ class Calculate {
         //ponechaj na hladanie len tie ktore sa nenasli na danom poschodi
         itemsLeft = itemsLeft.filter((x) => !itemsOnFloor.includes(x));
         // vyber vsetky pozicie hladanych tovarov na poschodi a ich vzdialenosti od vozika
-        ({ routeLengthItems, routeItems } = this._traceFloor(itemsOnFloor, routeItems, routeLengthItems, startPosition, floorPositions));
+        ({ routeLengthItems, routeItems } = this._traceOneFloor(itemsOnFloor, routeItems, routeLengthItems, startPosition, floorPositions));
         // oznac najblizsi tovar za najdeny
         let routeLength = routeLengthItems.reduce(function (a, b) {
             return a + b;
@@ -96,7 +92,7 @@ class Calculate {
             itemsLeft,
         };
     }
-    _traceFloor(itemsLeft, routeItems, routeLengthItems, startPosition, floorPositions) {
+    _traceOneFloor(itemsLeft, routeItems, routeLengthItems, startPosition, floorPositions) {
         let allDistances = [];
         for (const position of floorPositions) {
             allDistances.push({
@@ -129,7 +125,7 @@ class Calculate {
         floorPositions = floorPositions.filter((item) => item.productId !== nearest.productId);
         // ak je co hladat chod hladat dalsi produkt
         if (itemsLeft.length > 0) {
-            this._traceFloor(itemsLeft, routeItems, routeLengthItems, { x: nearest.x, y: nearest.y, z: nearest.z }, floorPositions);
+            this._traceOneFloor(itemsLeft, routeItems, routeLengthItems, { x: nearest.x, y: nearest.y, z: nearest.z }, floorPositions);
         }
         return { routeLengthItems, routeItems };
     }
