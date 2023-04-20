@@ -24,6 +24,7 @@ JSON data: \
 	}
 }
 
-
+## Limitations:
+Cuurent version calculate only starting floor
 
 
