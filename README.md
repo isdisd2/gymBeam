@@ -7,7 +7,7 @@ npm run dev
 
 ## Usage:
 
-### Insomnia request:\
+### Insomnia request:
 
 type: get\
 url: http://localhost:3000/optimize \
