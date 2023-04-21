@@ -102,7 +102,7 @@ class Calculate {
             // console.log("Produkty na poschodi: " + floor);
             // console.log(itemsOnFloor);
             // ponechaj na hladanie na poschodi len tie produkty, ktore sa este nenasli na predoslich poschodiach
-            itemsLeftOnFloor = itemsOnFloor.filter((x) => itemsLeft.includes(x));
+            itemsLeftOnFloor = itemsOnFloor.filter((item) => itemsLeft.includes(item));
             // console.log("Zostava najst na poschodi: ");
             // console.log(itemsLeftOnFloor);
             let itemsOnFloorPositions = floorPositions.filter((pos) => itemsLeftOnFloor.includes(pos.productId));
@@ -114,7 +114,7 @@ class Calculate {
             // vyber vsetky pozicie hladanych tovarov na poschodi a ich vzdialenosti od vozika
             ({ routeLengthItems, routeItems } = this._traceOneFloor(itemsLeftOnFloor, routeItems, routeLengthItems, startPosition, itemsOnFloorPositions));
             // ponechaj na hladanie na dalsom poschodi len tie produkty, ktore sa este nenasli na tomto poschodi
-            itemsLeftOnFloor = itemsOnFloor.filter((x) => itemsLeft.includes(x));
+            itemsLeftOnFloor = itemsOnFloor.filter((item) => itemsLeft.includes(item));
             // ponechaj na celkove hladanie len tie produkty, ktore sa este nenasli na tomto poschodi
             itemsLeft = itemsLeft.filter((x) => !itemsLeftOnFloor.includes(x));
             // nastav vychodiskovu poziciu pre dalsie poschodie

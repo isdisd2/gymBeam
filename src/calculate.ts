@@ -135,8 +135,8 @@ class Calculate {
             // console.log(itemsOnFloor);
 
             // ponechaj na hladanie na poschodi len tie produkty, ktore sa este nenasli na predoslich poschodiach
-            itemsLeftOnFloor = itemsOnFloor.filter((x: string) =>
-                itemsLeft.includes(x)
+            itemsLeftOnFloor = itemsOnFloor.filter((item: string) =>
+                itemsLeft.includes(item)
             );
             // console.log("Zostava najst na poschodi: ");
             // console.log(itemsLeftOnFloor);
@@ -160,8 +160,8 @@ class Calculate {
             ));
 
             // ponechaj na hladanie na dalsom poschodi len tie produkty, ktore sa este nenasli na tomto poschodi
-            itemsLeftOnFloor = itemsOnFloor.filter((x: string) =>
-                itemsLeft.includes(x)
+            itemsLeftOnFloor = itemsOnFloor.filter((item: string) =>
+                itemsLeft.includes(item)
             );
 
             // ponechaj na celkove hladanie len tie produkty, ktore sa este nenasli na tomto poschodi
