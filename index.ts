@@ -1,3 +1,4 @@
+"use strict";
 // start: nodemon index.js
 import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
