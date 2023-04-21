@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-var dataUrl = "https://dev.aux.boxpi.com/case-study/products";
+const dataUrl = "https://dev.aux.boxpi.com/case-study/products";
 
 interface Point {
     X: number;

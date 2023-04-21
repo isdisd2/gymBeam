@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 const axios = require("axios");
-var dataUrl = "https://dev.aux.boxpi.com/case-study/products";
+const dataUrl = "https://dev.aux.boxpi.com/case-study/products";
 class Calculate {
     /**
      * Calculate route
