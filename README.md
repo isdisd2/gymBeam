@@ -30,4 +30,4 @@ JSON data: \
 ## Logic of calculation
 
 The search logic is - first go to the floor where you are and then go from the highest floor to the lowest. \
-When changing the floor, the coordinates [0, 0, <floorNumber>] are considered as the starting position.
+When changing the floor, the coordinates [0, 0, \<floorNumber\>] are considered as the starting position.
