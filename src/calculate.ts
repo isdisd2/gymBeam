@@ -1,7 +1,7 @@
 "use strict";
 
 const axios = require("axios");
-const CalculateHelper = require("./calculate-helper");
+const CalculateHelperModule = require("./calculate-helper");
 
 const dataUrl = "https://dev.aux.boxpi.com/case-study/products";
 
@@ -50,7 +50,7 @@ class Calculate {
         }
 
         // return allPositions;
-        const route = CalculateHelper.findRoute(
+        const route = CalculateHelperModule.findRoute(
             dataIn.productList,
             allPositions,
             dataIn.startPosition
