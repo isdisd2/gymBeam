@@ -2,19 +2,24 @@ const axios = require("axios");
 
 var dataUrl = "https://dev.aux.boxpi.com/case-study/products";
 
-// interface Point {
-//     X: number;
-//     Y: number;
-//     Z: number;
-//   }
+interface Point {
+    X: number;
+    Y: number;
+    Z: number;
+}
 
-//   interface InputData {
-//     productList: string[];
-//     startPosition: Point;
-//   }
+interface InputData {
+    productList: string[];
+    startPosition: Point;
+}
 
 class Calculate {
-    async calculate(dataIn: any) {
+    /**
+     * Calculate route
+     * @param dataIn
+     * @returns
+     */
+    async calculate(dataIn: InputData) {
         let allPositions: any = [];
         for (let product of dataIn.productList) {
             let productUrl = `${dataUrl}/${product}/positions`;
@@ -41,9 +46,6 @@ class Calculate {
                 });
         }
 
-        // usporiadaj podla podlazia
-        allPositions.sort((a: { z: number }, b: { z: number }) => a.z - b.z);
-
         // return allPositions;
         const route = this._findRoute(
             dataIn.productList,
@@ -53,87 +55,152 @@ class Calculate {
         return route;
     }
 
+    /**
+     * Find optimized route
+     * @param productListAll
+     * @param allPositions
+     * @param startPosition
+     * @returns
+     */
     _findRoute(productListAll: any, allPositions: any, startPosition: any) {
-        let floor = startPosition.z;
-        let itemsLeft = [...productListAll]; //este nenajdene tovary
-        
+        // usporiadaj podla podlazia od najvyssieho
+        allPositions.sort((a: { z: number }, b: { z: number }) => b.z - a.z);
+
+        // zisti vsetky poschodia
+        let allFloors = allPositions.map((pos: any) => pos.z);
+        allFloors = [...new Set(allFloors)];
+
+        // odstran poschodie na ktorom si (ak existuje) a daj ho na prve miesto
+        // logika vyhladavania je najprv prejdi poschodie kde si a potom chod od najvyssieho dole
+        const index = allFloors.indexOf(startPosition.z);
+        index >= 0 && allFloors.splice(index, 1);
+        allFloors.unshift(startPosition.z);
+
         // prejdi vsetky poschodia
         const route = this._traceFloors(
             allPositions,
-            floor,
+            allFloors,
             productListAll,
-            itemsLeft,
             startPosition
         );
         return route;
     }
 
+    /**
+     * Trace route on all floors
+     * @param allPositions
+     * @param floor
+     * @param productListAll
+     * @param itemsLeft
+     * @param startPosition
+     * @returns
+     */
     _traceFloors(
         allPositions: any,
-        floor: number,
+        allFloors: any,
         productListAll: any,
-        itemsLeft: any,
         startPosition: any
     ) {
-        let routeItems: any = [];
-        let routeLengthItems: any = [];
+        let routeItems: any = []; // vybrane pozicie na trase
+        let itemsLeft = [...productListAll]; // este nenajdene tovary
+        let itemsLeftOnFloor = itemsLeft; // este nenajdene tovary na poschodi
+        let routeLength; // celkova dzka trasy
+        let routeLengthItems: any = []; // jednotlive vzdialenosti na trase
 
-        // vyber vsetky pozicie na danom poschodi
-        const floorPositions = allPositions.filter(
-            (item: any) =>
-                item.z === floor && productListAll.includes(item.productId)
-        );
+        // prejdi poschodia podla logiky poradia
+        for (const floor of allFloors) {
+            // console.log("Celkovo itemsLeft");
+            // console.log(itemsLeft);
 
-        if (floorPositions.length === 0) {
-            // ak neexistuje na danom poschodi hladany tovar, koniec hladania
-            return {
-                floor,
-                routeLength: 0,
-                routeLengthItems,
+            // nastav vychodiskovu poziciu pre dalsie poschodie
+            // pri prvom cykle zacne na startovacom poschodi, pri dalsom cykle sa nastavi: [0, 0, <poschodie>]
+            startPosition = { ...startPosition, z: floor };
+
+            // vyber vsetky pozicie na danom poschodi
+            const floorPositions = allPositions.filter(
+                (item: any) =>
+                    item.z === floor && productListAll.includes(item.productId)
+            );
+
+            if (floorPositions.length === 0) {
+                // ak neexistuje na danom poschodi hladany tovar, koniec hladania
+                // console.log("Vynechavam poschodie: " + floor);
+                continue;
+            }
+
+            // vyber len tie produkty, ktore sa nachadzaju na poschodi
+            let itemsOnFloor = floorPositions.map((pos: any) => pos.productId);
+            itemsOnFloor = [...new Set(itemsOnFloor)];
+            // console.log("Produkty na poschodi: " + floor);
+            // console.log(itemsOnFloor);
+
+            // ponechaj na hladanie na poschodi len tie produkty, ktore sa este nenasli na predoslich poschodiach
+            itemsLeftOnFloor = itemsOnFloor.filter((x: string) =>
+                itemsLeft.includes(x)
+            );
+            // console.log("Zostava najst na poschodi: ");
+            // console.log(itemsLeftOnFloor);
+
+            let itemsOnFloorPositions = floorPositions.filter((pos: any) =>
+                itemsLeftOnFloor.includes(pos.productId)
+            );
+            // console.log("Pozicie na poschodi: " + floor);
+            // console.log(itemsOnFloorPositions);
+
+            // vynechaj poschodie, ak neobsahuje polozky ktore ostava najst
+            if (itemsLeftOnFloor.length === 0) continue;
+
+            // vyber vsetky pozicie hladanych tovarov na poschodi a ich vzdialenosti od vozika
+            ({ routeLengthItems, routeItems } = this._traceOneFloor(
+                itemsLeftOnFloor,
                 routeItems,
-                itemsLeft,
-            };
+                routeLengthItems,
+                startPosition,
+                itemsOnFloorPositions
+            ));
+
+            // ponechaj na hladanie na dalsom poschodi len tie produkty, ktore sa este nenasli na tomto poschodi
+            itemsLeftOnFloor = itemsOnFloor.filter((x: string) =>
+                itemsLeft.includes(x)
+            );
+
+            // ponechaj na celkove hladanie len tie produkty, ktore sa este nenasli na tomto poschodi
+            itemsLeft = itemsLeft.filter((x) => !itemsLeftOnFloor.includes(x));
+
+            // nastav vychodiskovu poziciu pre dalsie poschodie
+            startPosition = { x: 0, y: 0, z: 0 };
         }
 
-        // vyber len tie produkty, ktore sa nachadzaju na poschodi
-        let itemsOnFloor = floorPositions.map((pos: any) => pos.productId);
-        itemsOnFloor = [...new Set(itemsOnFloor)];
-
-        // ponechaj na hladanie len tie produkty, ktore sa nenasli na danom poschodi
-        itemsLeft = itemsLeft.filter((x: string) => !itemsOnFloor.includes(x));
-
-        // vyber vsetky pozicie hladanych tovarov na poschodi a ich vzdialenosti od vozika
-        ({ routeLengthItems, routeItems } = this._traceOneFloor(
-            itemsOnFloor,
-            routeItems,
-            routeLengthItems,
-            startPosition,
-            floorPositions
-        ));
-
-        // oznac najblizsi tovar za najdeny
-        let routeLength = routeLengthItems.reduce(function (
-            a: number,
-            b: number
-        ) {
+        // vyrataj celkovu prejdenu trasu
+        routeLength = routeLengthItems.reduce(function (a: number, b: number) {
             return a + b;
         });
+
         return {
             routeItems,
             routeLength,
-            floor,
-            routeLengthItems,
-            itemsLeft,
+            // routeLengthItems,
+            // itemsLeft,
         };
     }
 
+    /**
+     * Trace route on one floor
+     * @param itemsLeft
+     * @param routeItems
+     * @param routeLengthItems
+     * @param startPosition
+     * @param floorPositions
+     * @returns
+     */
     _traceOneFloor(
-        itemsLeft: any,
+        itemsLeftOnFloor: any,
         routeItems: any,
         routeLengthItems: any,
         startPosition: any,
         floorPositions: any
     ) {
+        // zisti vsetky pozicie a ich vzdialenosti od aktualnej pozicie
         let allDistances = [];
         for (const position of floorPositions) {
             allDistances.push({
@@ -148,9 +215,13 @@ class Calculate {
                 ),
             });
         }
+        // console.log("All distances (subproc): ");
+        // console.log(allDistances);
 
         // najdi najblizsi tovar na poschodi od miesta kde som
         let nearest = allDistances.sort((a, b) => a.distance - b.distance)[0];
+        // console.log("nearest (subproc): ");
+        // console.log(nearest);
 
         // chod k najblisiemu, zapametaj si dlzku trasy a poziciu, kadial siel
         routeLengthItems.push(nearest.distance);
@@ -162,19 +233,21 @@ class Calculate {
             z: nearest.z,
         });
 
-        // zmaz najdenu z pola hladanych
-        const index = itemsLeft.indexOf(nearest.productId);
-        itemsLeft.splice(index, 1);
+        // zmaz najdeny tovar zo zoznamu hladanych
+        const index = itemsLeftOnFloor.indexOf(nearest.productId);
+        itemsLeftOnFloor.splice(index, 1);
+        // console.log("Zostava najst na poschodi (subproc): ");
+        // console.log(itemsLeftOnFloor);
 
         // zmaz pozicie najdeneho produktu
         floorPositions = floorPositions.filter(
             (item: any) => item.productId !== nearest.productId
         );
 
-        // ak je co hladat chod hladat dalsi produkt
-        if (itemsLeft.length > 0) {
+        // ak je este co hladat, chod hladat dalsi produkt
+        if (itemsLeftOnFloor.length > 0) {
             this._traceOneFloor(
-                itemsLeft,
+                itemsLeftOnFloor,
                 routeItems,
                 routeLengthItems,
                 { x: nearest.x, y: nearest.y, z: nearest.z },
@@ -185,6 +258,12 @@ class Calculate {
         return { routeLengthItems, routeItems };
     }
 
+    /**
+     * Get distance between two points
+     * @param point1
+     * @param point2
+     * @returns
+     */
     _getDistance(point1: any, point2: any) {
         const [x1, y1, z1] = point1;
         const [x2, y2, z2] = point2;
