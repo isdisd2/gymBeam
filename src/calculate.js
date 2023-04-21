@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 const axios = require("axios");
-const CalculateHelper = require("./calculate-helper");
+const CalculateHelperModule = require("./calculate-helper");
 const dataUrl = "https://dev.aux.boxpi.com/case-study/products";
 class Calculate {
     /**
@@ -42,7 +42,7 @@ class Calculate {
                 });
             }
             // return allPositions;
-            const route = CalculateHelper.findRoute(dataIn.productList, allPositions, dataIn.startPosition);
+            const route = CalculateHelperModule.findRoute(dataIn.productList, allPositions, dataIn.startPosition);
             return route;
         });
     }
